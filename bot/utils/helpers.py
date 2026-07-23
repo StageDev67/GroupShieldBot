@@ -7,24 +7,29 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 async def is_group_admin(message: Message, user_id: int = None) -> bool:
+    """Проверка, является ли пользователь администратором группы"""
     if user_id is None:
         user_id = message.from_user.id
     try:
         member = await bot.get_chat_member(message.chat.id, user_id)
         return member.status in ["creator", "administrator"]
-    except:
+    except Exception as e:
+        logger.error(f"Error checking admin status: {e}")
         return False
 
 async def is_group_creator(message: Message, user_id: int = None) -> bool:
+    """Проверка, является ли пользователь создателем группы"""
     if user_id is None:
         user_id = message.from_user.id
     try:
         member = await bot.get_chat_member(message.chat.id, user_id)
         return member.status == "creator"
-    except:
+    except Exception as e:
+        logger.error(f"Error checking creator status: {e}")
         return False
 
 async def delete_message_safe(message: Message) -> bool:
+    """Безопасное удаление сообщения"""
     try:
         await message.delete()
         from bot.database.db_manager import db
@@ -35,6 +40,7 @@ async def delete_message_safe(message: Message) -> bool:
         return False
 
 async def ban_user(chat_id: int, user_id: int, reason: str = "") -> bool:
+    """Бан пользователя"""
     try:
         await bot.ban_chat_member(chat_id, user_id)
         from bot.database.db_manager import db
@@ -46,6 +52,7 @@ async def ban_user(chat_id: int, user_id: int, reason: str = "") -> bool:
         return False
 
 async def log_action(message_or_update, action: str, details: str = ""):
+    """Логирование действий в канал"""
     if not config.LOG_CHANNEL_ID:
         return
     try:
@@ -55,6 +62,7 @@ async def log_action(message_or_update, action: str, details: str = ""):
         else:
             chat = message_or_update.chat
             user = message_or_update.new_chat_member.user
+        
         log_text = (
             f"📋 <b>Действие модерации</b>\n"
             f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -66,3 +74,9 @@ async def log_action(message_or_update, action: str, details: str = ""):
         await bot.send_message(config.LOG_CHANNEL_ID, log_text, parse_mode="HTML")
     except Exception as e:
         logger.error(f"Failed to log action: {e}")
+
+async def reset_user_counters(group_id: int, user_id: int):
+    """Сброс счетчиков пользователя"""
+    from bot.database.db_manager import db
+    await db.reset_message_count(group_id, user_id)
+    await db.reset_forward_count(group_id, user_id)

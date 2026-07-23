@@ -287,5 +287,18 @@ class Database:
                     "warnings_given": 0
                 }
 
+    async def get_last_message_time(self, group_id: int, user_id: int):
+        """Получение времени последнего сообщения пользователя"""
+        async with self.get_connection() as db:
+            cursor = await db.execute(
+                "SELECT last_message_time FROM user_messages WHERE group_id = ? AND user_id = ?",
+                (group_id, user_id)
+            )
+            row = await cursor.fetchone()
+            if row:
+                from datetime import datetime
+                return datetime.fromisoformat(row["last_message_time"])
+            return None      
+
 # Создаем глобальный экземпляр
 db = Database(config.DB_PATH)

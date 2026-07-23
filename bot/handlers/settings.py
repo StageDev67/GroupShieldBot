@@ -13,12 +13,14 @@ router = Router()
 @router.message(Command("settings"))
 async def cmd_settings(message: Message):
     """Настройки группы"""
+    print("🔴 КОМАНДА /settings")
+    
     if message.chat.type not in ("group", "supergroup"):
-        await message.answer("❌ Команда доступна только в группе")
+        await message.answer("❌ Команда доступна только в группе!")
         return
-
+    
     if not await is_group_creator(message):
-        await message.answer("❌ Только создатель группы может менять настройки")
+        await message.answer("❌ Только создатель группы может менять настройки!")
         return
 
     settings = await db.get_settings(message.chat.id)
@@ -56,7 +58,8 @@ async def cmd_settings(message: Message):
 
     await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
 
-# FSM обработчики для настроек
+# ============ FSM ОБРАБОТЧИКИ ============
+
 @router.message(SettingsStates.waiting_for_welcome)
 async def process_welcome(message: Message, state: FSMContext):
     data = await state.get_data()
