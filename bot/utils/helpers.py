@@ -14,7 +14,7 @@ async def is_group_admin(message: Message, user_id: int = None) -> bool:
         member = await bot.get_chat_member(message.chat.id, user_id)
         return member.status in ["creator", "administrator"]
     except Exception as e:
-        logger.error(f"Error checking admin status: {e}")
+        print(f"Ошибка проверки админа: {e}")
         return False
 
 async def is_group_creator(message: Message, user_id: int = None) -> bool:
@@ -80,3 +80,39 @@ async def reset_user_counters(group_id: int, user_id: int):
     from bot.database.db_manager import db
     await db.reset_message_count(group_id, user_id)
     await db.reset_forward_count(group_id, user_id)
+    
+async def get_user_by_username(chat_id: int, username: str):
+    """Поиск пользователя по username в группе"""
+    from bot import bot
+    
+    # Убираем @ если есть
+    if username.startswith("@"):
+        username = username[1:]
+    
+    # 1. Пробуем через get_chat_member
+    try:
+        member = await bot.get_chat_member(chat_id, f"@{username}")
+        return member.user
+    except:
+        pass
+    
+    # 2. Ищем среди администраторов
+    try:
+        admins = await bot.get_chat_administrators(chat_id)
+        for admin in admins:
+            if admin.user.username and admin.user.username.lower() == username.lower():
+                return admin.user
+    except:
+        pass
+    
+    # 3. Ищем среди всех участников
+    try:
+        async for member in bot.get_chat_members(chat_id):
+            if member.user.username and member.user.username.lower() == username.lower():
+                return member.user
+            if member.user.full_name and username.lower() in member.user.full_name.lower():
+                return member.user
+    except:
+        pass
+    
+    return None    

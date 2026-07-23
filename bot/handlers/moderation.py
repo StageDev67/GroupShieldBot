@@ -33,7 +33,7 @@ async def moderate_message(message: Message):
             await delete_message_safe(message)
             await log_action(message, "Удаление спама", "Слишком частые сообщения")
             await message.answer(
-                "❌ <b>Не спамьте!</b>\n"
+                "❌ <b>Не спамьте</b>\n"
                 "<blockquote>Подождите 1 секунду между сообщениями</blockquote>",
                 parse_mode="HTML"
             )
@@ -45,7 +45,7 @@ async def moderate_message(message: Message):
         await delete_message_safe(message)
         await log_action(message, "Удаление ссылки", f"Пользователь ({msg_count} сообщений)")
         await message.answer(
-            "❌ <b>Отправка ссылок запрещена!</b>\n"
+            "❌ <b>Отправка ссылок запрещена</b>\n"
             "<blockquote>Ссылки удаляются автоматически</blockquote>",
             parse_mode="HTML"
         )
@@ -56,7 +56,7 @@ async def moderate_message(message: Message):
         await delete_message_safe(message)
         await log_action(message, "Удаление мата", "Обнаружено запрещенное слово")
         await message.answer(
-            "❌ <b>Использование мата запрещено!</b>\n"
+            "❌ <b>Использование мата запрещено</b>\n"
             "<blockquote>Сообщение удалено за нарушение правил</blockquote>",
             parse_mode="HTML"
         )
@@ -70,7 +70,7 @@ async def moderate_message(message: Message):
             await db.reset_forward_count(message.chat.id, user_id)
             await log_action(message, "Удаление пересылки", f"Слишком много пересылок ({forward_count})")
             await message.answer(
-                f"❌ <b>Пересылки ограничены!</b>\n"
+                f"❌ <b>Пересылки ограничены</b>\n"
                 f"<blockquote>Нельзя пересылать более {config.MAX_FORWARDS} сообщений подряд</blockquote>",
                 parse_mode="HTML"
             )
@@ -85,7 +85,7 @@ async def moderate_message(message: Message):
             await delete_message_safe(message)
             await log_action(message, "Удаление упоминаний", f"Слишком много упоминаний ({mention_count})")
             await message.answer(
-                f"❌ <b>Слишком много упоминаний!</b>\n"
+                f"❌ <b>Слишком много упоминаний</b>\n"
                 f"<blockquote>Нельзя упоминать более {config.MAX_MENTIONS} пользователей в одном сообщении</blockquote>",
                 parse_mode="HTML"
             )

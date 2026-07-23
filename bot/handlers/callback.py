@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from bot.database.db_manager import db
 from bot.states.settings import SettingsStates
 from bot.keyboards.inline import get_settings_keyboard
+from bot.utils.helpers import is_group_creator
 from config import config
 
 router = Router()
@@ -14,6 +15,14 @@ def status(value):
 @router.callback_query(F.data.startswith("toggle_"))
 async def toggle_setting(callback: CallbackQuery):
     """Переключение настроек"""
+    # Проверяем права
+    if not await is_group_creator(callback.message):
+        await callback.answer(
+            "❌ У вас нет прав! Только создатель группы может менять настройки.",
+            show_alert=True
+        )
+        return
+    
     setting_map = {
         "toggle_links": "delete_links",
         "toggle_badwords": "delete_bad_words",
@@ -31,7 +40,6 @@ async def toggle_setting(callback: CallbackQuery):
     new_value = 0 if current else 1
     await db.update_setting(callback.message.chat.id, setting, new_value)
     
-    # Названия правил для уведомления
     names = {
         "delete_links": "Удаление ссылок",
         "delete_bad_words": "Удаление мата",
@@ -79,12 +87,20 @@ async def toggle_setting(callback: CallbackQuery):
 
 @router.callback_query(F.data == "edit_welcome")
 async def edit_welcome(callback: CallbackQuery, state: FSMContext):
+    # Проверяем права
+    if not await is_group_creator(callback.message):
+        await callback.answer(
+            "❌ У вас нет прав! Только создатель группы может менять настройки.",
+            show_alert=True
+        )
+        return
+    
     await callback.answer()
     await state.set_state(SettingsStates.waiting_for_welcome)
     await state.update_data(chat_id=callback.message.chat.id)
     await callback.message.answer(
         "✏️ <b>Настройка приветствия</b>\n\n"
-        "Отправьте новое приветственное сообщение\n\n"
+        "Отправьте новое приветственное сообщение.\n\n"
         "📌 <b>Доступные переменные:</b>\n"
         "<code>{username}</code> - имя пользователя\n"
         "<code>{user_mention}</code> - упоминание пользователя\n\n"
@@ -95,12 +111,20 @@ async def edit_welcome(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "edit_goodbye")
 async def edit_goodbye(callback: CallbackQuery, state: FSMContext):
+    # Проверяем права
+    if not await is_group_creator(callback.message):
+        await callback.answer(
+            "❌ У вас нет прав! Только создатель группы может менять настройки.",
+            show_alert=True
+        )
+        return
+    
     await callback.answer()
     await state.set_state(SettingsStates.waiting_for_goodbye)
     await state.update_data(chat_id=callback.message.chat.id)
     await callback.message.answer(
         "✏️ <b>Настройка прощания</b>\n\n"
-        "Отправьте новое сообщение прощания\n\n"
+        "Отправьте новое сообщение прощания.\n\n"
         "📌 <b>Доступные переменные:</b>\n"
         "<code>{username}</code> - имя пользователя\n"
         "<code>{user_mention}</code> - упоминание пользователя\n\n"
@@ -111,13 +135,21 @@ async def edit_goodbye(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "edit_badwords")
 async def edit_badwords(callback: CallbackQuery, state: FSMContext):
+    # Проверяем права
+    if not await is_group_creator(callback.message):
+        await callback.answer(
+            "❌ У вас нет прав! Только создатель группы может менять настройки.",
+            show_alert=True
+        )
+        return
+    
     await callback.answer()
     await state.set_state(SettingsStates.waiting_for_bad_words)
     await state.update_data(chat_id=callback.message.chat.id)
     settings = await db.get_settings(callback.message.chat.id)
     await callback.message.answer(
         f"✏️ <b>Настройка запрещенных слов</b>\n\n"
-        f"Отправьте новый список слов через запятую\n\n"
+        f"Отправьте новый список слов через запятую.\n\n"
         f"📌 <b>Текущий список:</b>\n"
         f"<i>{settings['bad_words']}</i>\n\n"
         "Пример:\n"
@@ -127,7 +159,15 @@ async def edit_badwords(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "reset_settings")
 async def reset_settings(callback: CallbackQuery):
-    await callback.answer("🔄 Настройки сброшены к стандартным", show_alert=True)
+    # Проверяем права
+    if not await is_group_creator(callback.message):
+        await callback.answer(
+            "❌ У вас нет прав! Только создатель группы может менять настройки.",
+            show_alert=True
+        )
+        return
+    
+    await callback.answer("🔄 Настройки сброшены к стандартным!", show_alert=True)
     
     await db.update_setting(callback.message.chat.id, "delete_links", 1)
     await db.update_setting(callback.message.chat.id, "delete_bad_words", 1)
@@ -137,7 +177,6 @@ async def reset_settings(callback: CallbackQuery):
     await db.update_setting(callback.message.chat.id, "goodbye_message", "Пользователь покинул группу")
     await db.update_setting(callback.message.chat.id, "bad_words", ",".join(config.BAD_WORDS_DEFAULT))
     
-    # Обновляем сообщение
     settings = await db.get_settings(callback.message.chat.id)
     keyboard = get_settings_keyboard(settings)
     

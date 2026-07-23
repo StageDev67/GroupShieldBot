@@ -26,29 +26,66 @@ async def cmd_warn(message: Message, command: CommandObject):
         )
         return
     
-    if not command.args:
-        await message.answer(
-            "❌ <b>Неверный формат</b>\n"
-            "<blockquote>Использование: /warn @username [причина]</blockquote>",
-            parse_mode="HTML"
-        )
-        return
+    target_user = None
+    reason = "Нарушение правил"
     
-    args = command.args.split(" ", 1)
-    username = args[0].strip()
-    reason = args[1] if len(args) > 1 else "Нарушение правил"
+    if message.reply_to_message:
+        target_user = message.reply_to_message.from_user
+        if command.args:
+            reason = command.args
+    else:
+        if not command.args:
+            await message.answer(
+                "❌ <b>Неверный формат</b>\n"
+                "<blockquote>Использование:\n"
+                "1. Ответьте на сообщение пользователя и напишите /warn [причина]\n"
+                "2. Или: /warn @username [причина]\n"
+                "3. Или: /warn 123456789 [причина]</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        args = command.args.split(" ", 1)
+        username = args[0].strip()
+        reason = args[1] if len(args) > 1 else "Нарушение правил"
+        
+        if username.startswith("@"):
+            username = username[1:]
+        
+        try:
+            from bot import bot
+            
+            try:
+                member = await bot.get_chat_member(message.chat.id, username)
+                target_user = member.user
+            except:
+                try:
+                    admins = await bot.get_chat_administrators(message.chat.id)
+                    for admin in admins:
+                        if admin.user.username and admin.user.username.lower() == username.lower():
+                            target_user = admin.user
+                            break
+                except:
+                    pass
+                
+                if not target_user and username.isdigit():
+                    try:
+                        member = await bot.get_chat_member(message.chat.id, int(username))
+                        target_user = member.user
+                    except:
+                        pass
+        except Exception as e:
+            print(f"Ошибка поиска: {e}")
     
-    if username.startswith("@"):
-        username = username[1:]
-    
-    try:
-        from bot import bot
-        user = await bot.get_chat_member(message.chat.id, f"@{username}")
-        target_user = user.user
-    except:
+    if not target_user:
         await message.answer(
             "❌ <b>Пользователь не найден</b>\n"
-            "<blockquote>Проверьте правильность username</blockquote>",
+            "<blockquote>Не удалось найти пользователя\n\n"
+            "💡 <b>Как найти ID пользователя:</b>\n"
+            "Перешлите сообщение пользователя в @TgramUserIDBot\n\n"
+            "📌 <b>Использование:</b>\n"
+            "• Ответьте на сообщение: /warn [причина]\n"
+            "• Или по ID: /warn 123456789 [причина]</blockquote>",
             parse_mode="HTML"
         )
         return
@@ -104,26 +141,60 @@ async def cmd_clear_warns(message: Message, command: CommandObject):
         )
         return
     
-    if not command.args:
-        await message.answer(
-            "❌ <b>Неверный формат</b>\n"
-            "<blockquote>Использование: /clear_warns @username</blockquote>",
-            parse_mode="HTML"
-        )
-        return
+    target_user = None
     
-    username = command.args.strip()
-    if username.startswith("@"):
-        username = username[1:]
+    if message.reply_to_message:
+        target_user = message.reply_to_message.from_user
+    else:
+        if not command.args:
+            await message.answer(
+                "❌ <b>Неверный формат</b>\n"
+                "<blockquote>Использование:\n"
+                "1. Ответьте на сообщение пользователя и напишите /clear_warns\n"
+                "2. Или: /clear_warns @username\n"
+                "3. Или: /clear_warns 123456789</blockquote>",
+                parse_mode="HTML"
+            )
+            return
+        
+        username = command.args.strip()
+        if username.startswith("@"):
+            username = username[1:]
+        
+        try:
+            from bot import bot
+            
+            try:
+                member = await bot.get_chat_member(message.chat.id, username)
+                target_user = member.user
+            except:
+                try:
+                    admins = await bot.get_chat_administrators(message.chat.id)
+                    for admin in admins:
+                        if admin.user.username and admin.user.username.lower() == username.lower():
+                            target_user = admin.user
+                            break
+                except:
+                    pass
+                
+                if not target_user and username.isdigit():
+                    try:
+                        member = await bot.get_chat_member(message.chat.id, int(username))
+                        target_user = member.user
+                    except:
+                        pass
+        except:
+            pass
     
-    try:
-        from bot import bot
-        user = await bot.get_chat_member(message.chat.id, f"@{username}")
-        target_user = user.user
-    except:
+    if not target_user:
         await message.answer(
             "❌ <b>Пользователь не найден</b>\n"
-            "<blockquote>Проверьте правильность username</blockquote>",
+            "<blockquote>Не удалось найти пользователя\n\n"
+            "💡 <b>Как найти ID пользователя:</b>\n"
+            "Перешлите сообщение пользователя в @TgramUserIDBot\n\n"
+            "📌 <b>Использование:</b>\n"
+            "• Ответьте на сообщение: /clear_warns\n"
+            "• Или по ID: /clear_warns 123456789</blockquote>",
             parse_mode="HTML"
         )
         return
